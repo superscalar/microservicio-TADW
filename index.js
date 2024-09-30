@@ -2,12 +2,14 @@ const express = require('express')
 const app = express()
 
 const movieDB_key = process.env.TMDB_KEY;
+const randommer_key = process.env.RANDOMMER_KEY;
 const API_root =  "https://api.themoviedb.org/3";
 const latestMovieEndpoint = "/movie/latest"
 const movieEndpoint = "/movie"
 
 const priceURL = "http://localhost:3000/moviePrice/";
-const peopleURL = "https://example.com";
+
+const peopleURL = "https://randommer.io/api/Name?nameType=firstname&quantity=3"
 
 app.get('/', (req, res) => {
   res.send('<h1>Microservice front page!</h1>')
@@ -17,9 +19,9 @@ function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-async function fetchJSON(url) {
+async function fetchJSON(url, custom_headers={}) {
 	try {
-		const response = await fetch(url, { cache: 'no-store' });
+		const response = await fetch(url, { cache: 'no-store', headers: custom_headers });
 		if (!response.ok) {
 		  throw new Error(`Response status: ${response.status}`);
 		}
@@ -47,6 +49,13 @@ app.get('/moviePrice/:id', (req, res) => {
 async function getPriceForMovie(id) {
 	let priceJSON = await fetchJSON(priceURL + id);
 	return priceJSON;
+}
+
+// ------------------------------------------------
+
+async function getPeopleForMovie(id) {
+	let peopleJSON = await fetchJSON(peopleURL, custom_headers={'X-Api-Key': randommer_key});
+	return peopleJSON[0] + ", " + peopleJSON[1] + " y "+ peopleJSON[2];
 }
 
 // ------------------------------------------------
@@ -85,15 +94,16 @@ async function random_movie() {
 	random_ID_data.precio = priceJSON.precio
 	random_ID_data.moneda = priceJSON.moneda;
 
-	// let peopleJSON = await getPeopleForMovie(randomID);
-	let peopleJSON = { personas: "placeholder, placeholder, y placeholder" }
-	random_ID_data.personas = peopleJSON.personas;
+	let peopleForMovie = await getPeopleForMovie(randomID);
+	console.log(peopleForMovie)
+	random_ID_data.personas = peopleForMovie;
 
 	return random_ID_data;
 }
 
 app.get('/randomMovie', async (req, res) => {
   let movieJSONFromTMDB = await random_movie();
+
   res.send({
   	"titulo": movieJSONFromTMDB.title,
     "imagenfondo": "https://image.tmdb.org/t/p/original" + movieJSONFromTMDB.poster_path,
