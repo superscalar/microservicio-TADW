@@ -3,12 +3,13 @@ const app = express()
 
 const movieDB_key = process.env.TMDB_KEY;
 const randommer_key = process.env.RANDOMMER_KEY;
+const port = process.env.PORT || 3333;
+
 const API_root =  "https://api.themoviedb.org/3";
 const latestMovieEndpoint = "/movie/latest"
 const movieEndpoint = "/movie"
 
-const priceURL = "http://localhost:3000/moviePrice/";
-
+const priceURL = "http://localhost:" + port + "/moviePrice";
 const peopleURL = "https://randommer.io/api/Name?nameType=firstname&quantity=3"
 
 app.get('/', (req, res) => {
@@ -27,7 +28,7 @@ async function fetchJSON(url, custom_headers={}) {
 		}
 
 		const json = await response.json();
-		console.log(json);
+		// console.log(json);
 
 		return json;
 	} catch (error) {
@@ -38,7 +39,7 @@ async function fetchJSON(url, custom_headers={}) {
 // ------------------------------------------------
 
 app.get('/moviePrice/:id', (req, res) => {
-	console.log("Getting price for movie: " + req.query.id);
+	console.log("Getting price for movie: " + req.params.id);
 	let monedas = ["bitcoin", "dolares estadounidenses", "dolares australianos", "pesos argentinos", "yen"];
 	res.send({
 		precio: randomIntFromInterval(10, 1000),
@@ -47,7 +48,8 @@ app.get('/moviePrice/:id', (req, res) => {
 });
 
 async function getPriceForMovie(id) {
-	let priceJSON = await fetchJSON(priceURL + id);
+	let priceJSON = await fetchJSON(priceURL + '/' + id);
+	// console.log("getPriceForMovie: ", priceJSON)
 	return priceJSON;
 }
 
@@ -84,9 +86,9 @@ async function random_movie() {
 		console.log("fetching id " + randomID)
 		console.log(random_ID_data);
 
-		if (random_ID_data != undefined) {
-			done = true;
-		}
+		// stop when we get some data + reject adult movies
+		// TODO: better validation (it depends on what kind of schema the TMDB people offer)
+		done = (random_ID_data != undefined) && !random_ID_data.adult;
 	}
 
 	// at this point, we know the ID is valid
@@ -114,6 +116,6 @@ app.get('/randomMovie', async (req, res) => {
 })
 
 
-app.listen(3000, function () {
-  console.log('Starting service!');
+app.listen(port, function () {
+  console.log('Starting service @ port ' + port + '!');
 });
