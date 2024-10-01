@@ -5,7 +5,7 @@ const movieDB_key = process.env.TMDB_KEY;
 const randommer_key = process.env.RANDOMMER_KEY;
 const port = process.env.PORT || 3333;
 
-const API_root =  "https://api.themoviedb.org/3";
+const API_root = "https://api.themoviedb.org/3";
 const latestMovieEndpoint = "/movie/latest"
 const movieEndpoint = "/movie"
 
@@ -13,18 +13,18 @@ const priceURL = "http://localhost:" + port + "/moviePrice";
 const peopleURL = "https://randommer.io/api/Name?nameType=firstname&quantity=3"
 
 app.get('/', (req, res) => {
-  res.send('<h1>Microservice front page!</h1>')
+	res.send('<h1>Microservice front page!</h1>')
 })
 
 function randomIntFromInterval(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
+	return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 async function fetchJSON(url, custom_headers={}) {
 	try {
 		const response = await fetch(url, { cache: 'no-store', headers: custom_headers });
 		if (!response.ok) {
-		  throw new Error(`Response status: ${response.status}`);
+			throw new Error(`Response status: ${response.status}`);
 		}
 
 		const json = await response.json();
@@ -87,7 +87,7 @@ async function random_movie() {
 		console.log(random_ID_data);
 
 		// stop when we get some data + reject adult movies
-		// TODO: better validation (it depends on what kind of schema the TMDB people offer)
+		// TODO: better validation (it depends on TMDB's schema - it seems to vary between movies)
 		done = (random_ID_data != undefined) && !random_ID_data.adult;
 	}
 
@@ -104,18 +104,22 @@ async function random_movie() {
 }
 
 app.get('/randomMovie', async (req, res) => {
-  let movieJSONFromTMDB = await random_movie();
+	let movieJSONFromTMDB = await random_movie();
+	console.log(movieJSONFromTMDB);
 
-  res.send({
-  	"titulo": movieJSONFromTMDB.title,
-    "imagenfondo": "https://image.tmdb.org/t/p/original" + movieJSONFromTMDB.poster_path,
-    "resumen": movieJSONFromTMDB.overview,
-    "precio": movieJSONFromTMDB.precio + " " + movieJSONFromTMDB.moneda,
-    "personas": movieJSONFromTMDB.personas
-  });
+	let posterPath = movieJSONFromTMDB.poster_path == null ? 
+			"" : "https://image.tmdb.org/t/p/original" + movieJSONFromTMDB.poster_path;
+
+	res.send({
+		"titulo": movieJSONFromTMDB.title,
+		"imagenfondo": posterPath,
+		"resumen": movieJSONFromTMDB.overview,
+		"precio": movieJSONFromTMDB.precio + " " + movieJSONFromTMDB.moneda,
+		"personas": movieJSONFromTMDB.personas
+	});
 })
 
 
 app.listen(port, function () {
-  console.log('Starting service @ port ' + port + '!');
+	console.log('Starting service @ port ' + port + '!');
 });
